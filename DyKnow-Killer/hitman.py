@@ -127,6 +127,7 @@ class sd:
 
 
 class driver:
+
   def isAdmin():
     try:
       return ctypes.windll.shell32.IsUserAnAdmin()
@@ -173,6 +174,8 @@ class driver:
 if __name__ == '__main__':
   driver.checkPerms()
   if not driver.isAdmin():
+    print('Please run this program as an administrator.')
+    time.sleep(5)
     sys.exit(1)
   clear()
   print("   ----- Windows DyKnow Hitman ----- \
@@ -221,6 +224,7 @@ if __name__ == '__main__':
     sys.exit(1)
   except Exception as e:
     print(f'ERROR: An unknown error was encountered. \n{e}\n')
+    time.sleep(5)
     sys.exit(1)
 
 else:
