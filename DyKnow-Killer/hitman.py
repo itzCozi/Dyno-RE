@@ -2,10 +2,11 @@
 # NOTE: If you want to run this program please run it as admin it will attempt
 # a self elevate though this is not guaranteed to work.
 
-import os, sys
-import socket
 import ctypes
+import os
 import signal
+import socket
+import sys
 import time
 
 clear = lambda: os.system('cls')
@@ -18,18 +19,7 @@ protectedProcesses = [
 
 class utility:
 
-  def processPath(process: str) -> str:
-    if process.endswith('.exe'):
-      process = process[:-4]
-    try:
-      out = os.popen(f'powershell (Get-Process {process}).Path').read()
-      for line in out.splitlines():
-        if os.path.exists(line):
-          return line
-    except Exception as e:
-      print(f'ERROR: An unknown error was encountered. \n{e}\n')
-      sys.exit(1)
-
+  @staticmethod
   def getProcesses() -> list:
     try:
       iterated = set()
@@ -51,8 +41,20 @@ class utility:
       print(f'ERROR: An unknown error was encountered. \n{e}\n')
       sys.exit(1)
 
+  def processPath(process: str) -> str:
+    if process.endswith('.exe'):
+      process = process[:-4]
+    try:
+      out = os.popen(f'powershell (Get-Process {process}).Path').read()
+      for line in out.splitlines():
+        if os.path.exists(line):
+          return line
+    except Exception as e:
+      print(f'ERROR: An unknown error was encountered. \n{e}\n')
+      sys.exit(1)
+
   def nameFinder(PID: int) -> str:
-    # TODO: Test to see if this returns multiple times if a process 
+    # TODO: Test to see if this returns multiple times if a process
     # has child processes or returns one list with all names
     output = os.popen(f'tasklist /svc /FI "PID eq {PID}"').read()
     for line in str(output).splitlines():
@@ -80,6 +82,17 @@ class utility:
 
 class sd:
 
+  @staticmethod
+  def getDyKnowProcesses() -> list:
+    allCrucial = []
+    base_dir = 'C:/Program Files/DyKnow'
+    for r, d, f in os.walk(base_dir):
+      for file in f:
+        if file.endswith('.exe'):
+          fileobj = f'{r}/{file}'.replace('/', '\\')
+          allCrucial.append(fileobj)
+    return allCrucial
+
   def killProcess(name: str) -> None:
     if name.endswith('.exe'):
       name = name.replace('.exe', '')
@@ -90,16 +103,6 @@ class sd:
       except Exception as e:
         print(f'ERROR: An unknown error was encountered. \n{e}\n')
         sys.exit(1)
-
-  def getDyKnowProcesses() -> list:
-    allCrucial = []
-    base_dir = 'C:/Program Files/DyKnow'
-    for r, d, f in os.walk(base_dir):
-      for file in f:
-        if file.endswith('.exe'):
-          fileobj = f'{r}/{file}'.replace('/', '\\')
-          allCrucial.append(fileobj)
-    return allCrucial
 
   def findDyKnowExe(target_exe: str) -> str:
     base_dir = 'C:/Program Files/DyKnow'
@@ -130,25 +133,28 @@ class sd:
 
 class driver:
 
+  @staticmethod
   def isAdmin() -> bool:
     try:
       return ctypes.windll.shell32.IsUserAnAdmin()
     except:
       return False
 
+  @staticmethod
   def checkPerms() -> None:
     admin = driver.isAdmin()
     if admin is False:
       print('ERROR: Hitman is running without admin, attempting self elevate.')
       time.sleep(2)
       ctypes.windll.shell32.ShellExecuteW(
-        None,  'runas', sys.executable,
+        None, 'runas', sys.executable,
         ' '.join(sys.argv), None, 1
       )
       time.sleep(1)
     else:  # If not False then ...
       pass
 
+  @staticmethod
   def addProtected() -> None:
     file = f'{os.getcwd()}/protect.txt'.replace('\\', '/')
     if not os.path.exists(file):
@@ -199,10 +205,8 @@ if __name__ == '__main__':
     blacklisted.extend(sd.getDyKnowProcesses())
     if len(blacklisted) == 0:
       clear()
-      print(
-        "Hitman cant locate DyKnow's files, This program might have \
-        already been ran if so please type 1 if not type 2."
-      )
+      print("Hitman cant locate DyKnow's files, This program might have \
+        already been ran if so please type 1 if not type 2.")
       q_a = input('> ')
       driver.errorHandler(q_a)
 
