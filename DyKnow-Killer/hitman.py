@@ -1,5 +1,5 @@
 # NOTE: To properly run this file you must compile it to .exe (Due to elevation)
-# NOTE: If you want to run this program please run it as admin it will attempt 
+# NOTE: If you want to run this program please run it as admin it will attempt
 # a self elevate though this is not guaranteed to work.
 
 import os, sys
@@ -18,7 +18,7 @@ protectedProcesses = [
 
 class utility:
 
-  def processPath(process):
+  def processPath(process: str) -> str:
     if process.endswith('.exe'):
       process = process[:-4]
     try:
@@ -30,7 +30,7 @@ class utility:
       print(f'ERROR: An unknown error was encountered. \n{e}\n')
       sys.exit(1)
 
-  def getProcesses():
+  def getProcesses() -> list:
     try:
       iterated = set()
       retlist = []
@@ -51,7 +51,9 @@ class utility:
       print(f'ERROR: An unknown error was encountered. \n{e}\n')
       sys.exit(1)
 
-  def nameFinder(PID):
+  def nameFinder(PID: int) -> str:
+    # TODO: Test to see if this returns multiple times if a process 
+    # has child processes or returns one list with all names
     output = os.popen(f'tasklist /svc /FI "PID eq {PID}"').read()
     for line in str(output).splitlines():
       if '.exe' in line:
@@ -60,7 +62,7 @@ class utility:
         retvalue = f'{diffrence}.exe'
         return retvalue
 
-  def getPID(process):
+  def getPID(process: str) -> list:
     try:
       retlist = []
       output = os.popen(f'powershell ps -Name {process}').read()
@@ -78,7 +80,7 @@ class utility:
 
 class sd:
 
-  def killProcess(name):
+  def killProcess(name: str) -> None:
     if name.endswith('.exe'):
       name = name.replace('.exe', '')
     PIDlist = utility.getPID(name)
@@ -89,7 +91,7 @@ class sd:
         print(f'ERROR: An unknown error was encountered. \n{e}\n')
         sys.exit(1)
 
-  def getDyKnowProcesses():
+  def getDyKnowProcesses() -> list:
     allCrucial = []
     base_dir = 'C:/Program Files/DyKnow'
     for r, d, f in os.walk(base_dir):
@@ -99,7 +101,7 @@ class sd:
           allCrucial.append(fileobj)
     return allCrucial
 
-  def findDyKnowExe(target_exe):
+  def findDyKnowExe(target_exe: str) -> str:
     base_dir = 'C:/Program Files/DyKnow'
     for r, d, f in os.walk(base_dir):
       for file in f:
@@ -109,7 +111,7 @@ class sd:
             item = item.replace('/', '')
           return item.replace('\\', '/')
 
-  def removeRunning(process):
+  def removeRunning(process: str) -> None:
     proc_path = utility.processPath(process)
     if not process.endswith('.exe'):
       process = f'{process}.exe'
@@ -128,23 +130,26 @@ class sd:
 
 class driver:
 
-  def isAdmin():
+  def isAdmin() -> bool:
     try:
       return ctypes.windll.shell32.IsUserAnAdmin()
     except:
       return False
 
-  def checkPerms():
+  def checkPerms() -> None:
     admin = driver.isAdmin()
-    if admin == False:
+    if admin is False:
       print('ERROR: Hitman is running without admin, attempting self elevate.')
       time.sleep(2)
-      ctypes.windll.shell32.ShellExecuteW(None, 'runas', sys.executable,' '.join(sys.argv), None, 1)
+      ctypes.windll.shell32.ShellExecuteW(
+        None,  'runas', sys.executable,
+        ' '.join(sys.argv), None, 1
+      )
       time.sleep(1)
-    if admin == True:
+    else:  # If not False then ...
       pass
 
-  def addProtected():
+  def addProtected() -> None:
     file = f'{os.getcwd()}/protect.txt'.replace('\\', '/')
     if not os.path.exists(file):
       print(f'No library found at {file}, skipping.')
@@ -154,7 +159,7 @@ class driver:
         for line in content.splitlines():
           protectedProcesses.append(line)
 
-  def errorHandler(error_code):
+  def errorHandler(error_code: str) -> None:
     if error_code == '1':
       print('The execution operation already removed crucial files.')
       time.sleep(5)
@@ -177,6 +182,7 @@ if __name__ == '__main__':
     print('Please run this program as an administrator.')
     time.sleep(5)
     sys.exit(1)
+
   clear()
   print("   ----- Windows DyKnow Hitman ----- \
     \nThis program will delete crucial DyKnow files to \
@@ -193,9 +199,13 @@ if __name__ == '__main__':
     blacklisted.extend(sd.getDyKnowProcesses())
     if len(blacklisted) == 0:
       clear()
-      print("Hitman cant locate DyKnow's files, This program might have already been ran if so please type 1 if not type 2.")
+      print(
+        "Hitman cant locate DyKnow's files, This program might have \
+        already been ran if so please type 1 if not type 2."
+      )
       q_a = input('> ')
       driver.errorHandler(q_a)
+
     for file in blacklisted:
       file_name = os.path.basename(file).split('\\')[-1]
       file = file.replace('\\', '/')
@@ -205,6 +215,7 @@ if __name__ == '__main__':
           print(f'File {file} is running as a process.')
           sd.removeRunning(del_file)
           print(f'Hitman killed/deleted running process {file}.')
+
       else:
         if file not in protectedProcesses:
           del_file = sd.findDyKnowExe(file_name)
